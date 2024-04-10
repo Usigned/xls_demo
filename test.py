@@ -1,8 +1,7 @@
 from typing import Dict, List
 import pandas as pd
 import argparse
-import json
-
+import os
 
 DEFAULT_COL_VAL = {
     '申报部门': '研发部',
@@ -79,13 +78,16 @@ def _wrap_fn(df, sheet_name):
 
 
 if __name__ == '__main__':
-    config = json.load('config.json')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--data', default=os.path.join(os.path.abspath(os.path.curdir), '研发部一季度申报.xlsx'), help='data file path')
+    parser.add_argument('-p', '--person', default=os.path.join(os.path.abspath(os.path.curdir), '员工基础信息表.xlsx'), help='person file path')
+    parser.add_argument('-o', '--output', help='output file path')
+    args = parser.parse_args()
     sheet_names = ['安全生产突出贡献奖', '安全生产管理奖']
     in_cols_lst = [['奖励对象名单', '申请事项简题', '奖励类别细分'],
                    ['奖励对象名单', '申请事项简题', '奖励类别']]
-    d_fpath = r'C:\Users\84371\Desktop\playground\xls_demo\研发部一季度申报 - 副本.xlsx'
-    p_fpath = r'C:\Users\84371\Desktop\playground\xls_demo\员工基础信息表1.xlsx'
-    out_fpath = 'result.xlsx'
+    d_fpath = args.data
+    p_fpath = args.person
     name_dict = generate_name_dict(pd.read_excel(p_fpath, sheet_name='基础信息表'))
     dfs = [sheet_process(
         sheet_name=sheet_name,
@@ -94,4 +96,7 @@ if __name__ == '__main__':
         name_dict=name_dict,
         in_cols=in_cols,
     ) for sheet_name, in_cols in zip(sheet_names, in_cols_lst)]
-    wrap_result_list(dfs).to_excel(out_fpath, index_label='序号')
+    if args.output:
+        wrap_result_list(dfs).to_excel(args.output, index_label='序号')
+    else:
+        print(wrap_result_list(dfs).to_csv())
