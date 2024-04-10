@@ -97,6 +97,9 @@ if __name__ == '__main__':
         in_cols=in_cols,
     ) for sheet_name, in_cols in zip(sheet_names, in_cols_lst)]
     if args.output:
-        wrap_result_list(dfs).to_excel(args.output, index_label='序号')
+        with pd.ExcelWriter(args.output, mode='w') as writer:
+            dfs = wrap_result_list(dfs)
+            dfs.to_excel(writer, index_label='序号', sheet_name='部门表')
+            dfs['人员'].value_counts().sort_values(ascending=False).to_excel(writer, index_label='序号', sheet_name='次数')
     else:
         print(wrap_result_list(dfs).to_csv())
