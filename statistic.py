@@ -77,9 +77,18 @@ def _wrap_fn(df, sheet_name):
     return df
 
 
+def _c_name_split_fn(names: str):
+    lines = [line for line in names.split('\n') if '研发部' in line]
+    result = []
+    for line in lines:
+        result += line.split('：')[-1].split('、')
+    return result
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--data', default=os.path.join(os.path.abspath(os.path.curdir), '研发部一季度申报.xlsx'), help='data file path')
+    parser.add_argument('-cd', '--cdata', default=os.path.join(os.path.abspath(os.path.curdir), '公司2024年一季度安全奖申报表.xls'), help='data file path')
     parser.add_argument('-p', '--person', default=os.path.join(os.path.abspath(os.path.curdir), '员工基础信息表.xlsx'), help='person file path')
     parser.add_argument('-o', '--output', help='output file path')
     args = parser.parse_args()
@@ -87,6 +96,7 @@ if __name__ == '__main__':
     in_cols_lst = [['奖励对象名单', '申请事项简题', '奖励类别细分'],
                    ['奖励对象名单', '申请事项简题', '奖励类别']]
     d_fpath = args.data
+    cd_fpath = args.cdata
     p_fpath = args.person
     name_dict = generate_name_dict(pd.read_excel(p_fpath, sheet_name='基础信息表'))
     dfs = [sheet_process(
@@ -96,10 +106,21 @@ if __name__ == '__main__':
         name_dict=name_dict,
         in_cols=in_cols,
     ) for sheet_name, in_cols in zip(sheet_names, in_cols_lst)]
+    cdfs = [sheet_process(
+        sheet_name=sheet_name,
+        wrap_fn=_wrap_fn,
+        df=pd.read_excel(cd_fpath, sheet_name=sheet_name)[:-1],
+        name_dict=name_dict,
+        in_cols=in_cols,
+        name_split_fn=_c_name_split_fn
+    ) for sheet_name, in_cols in zip(sheet_names, in_cols_lst)]
     if args.output:
         with pd.ExcelWriter(args.output, mode='w') as writer:
             dfs = wrap_result_list(dfs)
+            cdfs = wrap_result_list(cdfs)
             dfs.to_excel(writer, index_label='序号', sheet_name='部门表')
-            dfs['人员'].value_counts().sort_values(ascending=False).to_excel(writer, index_label='序号', sheet_name='次数')
+            cdfs.to_excel(writer, index_label='序号', sheet_name='公司表')
+            pd.concat([dfs['人员'], cdfs['人员']]).value_counts().sort_values(ascending=False).to_excel(writer, index_label='序号', sheet_name='次数')
     else:
         print(wrap_result_list(dfs).to_csv())
+        print(wrap_result_list(cdfs).to_csv())
