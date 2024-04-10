@@ -42,9 +42,11 @@ def generate_name_dict(df: pd.DataFrame, name_col='姓名', type_col='性质'):
     return name_dict
 
 
-def _defaul_post_process_fn(result):
-    result = result.sort_values(by=['人员', '奖励类别']).sort_values(
-        by='人员', key=lambda x: [r[-1] for r in x.str.split('（')], ascending=False)
+def _defaul_post_process_fn(result: pd.DataFrame):
+    result = result.sort_values(
+        by='人员', 
+        key=lambda x: [r[-1].strip()[:-1]+r[0] for r in x.str.split('（')], 
+        ascending=False)
     result.index = [i for i in range(1, len(result)+1)]
     return result
 
