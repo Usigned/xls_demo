@@ -30,7 +30,9 @@ def process_data(df: pd.DataFrame, name_dict, in_cols=['奖励对象名单', '�
     result = []
     for names, *cols in df[in_cols].values:
         for name in name_split_fn(names):
-            result.append([name_dict[name], *cols])
+            name = name.strip()
+            if name in name_dict:
+                result.append([name_dict[name], *cols])
     return pd.DataFrame(result, columns=out_cols)
 
 
